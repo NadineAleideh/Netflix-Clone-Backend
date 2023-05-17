@@ -55,6 +55,10 @@ server.get('/trending', trendingMoviesHandler)
 server.post('/addToFav', addToFavMoviesHandler)
 server.get('/getFavMovies', getFavMoviesHandler)
 
+//lab19
+server.put('/update/:id', updateMovie);
+server.delete('/deletemovie/:id', deletMovie);
+
 
 server.get('*', defaultHandler)
 
@@ -157,13 +161,59 @@ function getFavMoviesHandler(req, res) {
     client.query(sql)
         .then(data => {
             res.send(data.rows);//.rows in order to git just the records
-            console.log("Fav movies in DB",data.rows);
+            console.log("Fav movies in DB", data.rows);
         })
 
         .catch((error) => {
             errorHandler(error, req, res)
         })
 }
+
+
+
+//lab19 functions:
+
+function updateMovie(req, res) {
+    const id = req.params.id;
+    const upfavMovie = req.body;
+    const sql = `UPDATE favmovies
+    SET comment = $1 WHERE id = ${id} RETURNING *;`;
+    const values = [upfavMovie.comment];
+    client.query(sql, values)
+        .then(data => {
+            const sql = `SELECT * FROM favmovies;`;
+            client.query(sql)
+                .then(allData => {
+                    res.send(allData.rows)
+                })
+                .catch((error) => {
+                    errorHandler(error, req, res)
+                })
+        })
+        .catch((error) => {
+            console.log('sorry you have something error', error)
+            res.status(500).send(error);
+        })
+}
+
+
+function deletMovie(req, res) {
+
+    const id = req.params.id;
+    const sql = `DELETE FROM favmovies WHERE id=${id} RETURNING *;`;
+  
+    client.query(sql)
+      .then((response) => {
+        res.send("The movie has been removed successfully from the FavList")
+      })
+      .catch((error) => {
+        console.log('sorry you have something error', error)
+        res.status(500).send(error);
+      })
+  }
+  
+  
+
 ///////////////////////////////////////////////////////////////////////////////
 
 
@@ -341,10 +391,10 @@ function defaultHandler(req, res) {
 
 
 //constructors:
-function Movie(title,poster_path,overview){
-    this.title=title;
-    this.poster_path=poster_path;
-    this.overview=overview;
+function Movie(title, poster_path, overview) {
+    this.title = title;
+    this.poster_path = poster_path;
+    this.overview = overview;
 }
 
 function Item(id, title, release_date, poster_path, overview) {
